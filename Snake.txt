@@ -1,0 +1,479 @@
+package Snake;
+import Snake.*;
+
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+import java.util.*;
+
+
+
+public class Snake extends JFrame implements KeyListener
+{    
+    
+    public Vector pointVector=new Vector(20,20);
+    
+    
+    
+    public JPanel southPanel;
+    public DrawPanel drawPanel;
+    public JButton startButton,exitButton;
+    
+    final int horizontalWidth=10;
+    final int verticalHeight=10;
+    
+    
+    private int move=0;
+    private int eating=0;
+    
+    public Point foodPoint;
+    public Random rand=new Random();
+    public int numberOfHBlocks=0;
+    public int numberOfVBlocks=0;
+    public int startingXPoint=0;
+    public int startingYPoint=0;
+    public double previousNextDouble=0;
+    
+    public MyThread myThread;
+    
+    
+    public JLabel scoreLabel;
+    public long score=0;
+    
+    private int endGame=0;
+    
+    private int playing=0;
+    private int pausing=0;
+    
+    private int delayTime=100;
+    
+    
+    
+    
+    
+    
+    
+   
+    
+    public Snake()
+    {
+        super("Snake");
+        
+        
+        
+                
+        myThread=new MyThread();
+        foodPoint=new Point(50,50);
+        
+        Container container=getContentPane();
+        container.setLayout(new BorderLayout());
+        
+        
+        
+        JPanel northPanel=new JPanel();
+        northPanel.setLayout(new FlowLayout());
+        container.add(northPanel,BorderLayout.NORTH);
+        
+        
+        northPanel.add(new JLabel("Score : ",SwingConstants.CENTER));
+        scoreLabel=new JLabel(" "+score,SwingConstants.CENTER);
+        northPanel.add(scoreLabel);
+        
+                
+        drawPanel=new Snake.DrawPanel();
+        container.add(drawPanel,BorderLayout.CENTER);
+        drawPanel.addKeyListener(this);
+                
+        southPanel=new JPanel();
+        southPanel.setLayout(new FlowLayout());
+        container.add(southPanel,BorderLayout.SOUTH);
+        southPanel.addKeyListener(this);
+        
+        startButton=new JButton("Start");
+        southPanel.add(startButton);
+        startButton.addActionListener(
+            new ActionListener()
+            {
+                public void actionPerformed(ActionEvent ae)
+                {
+                    startGame();                                        
+                }
+            }
+        );
+        startButton.addKeyListener(this);
+        
+        exitButton=new JButton("Exit");
+        southPanel.add(exitButton);
+        
+        exitButton.addActionListener(
+            new ActionListener()
+            {
+                public void actionPerformed(ActionEvent ae)
+                {
+                    System.exit(0);
+                }
+            }
+        );
+        
+        exitButton.addKeyListener(this);
+        
+                container.addKeyListener(this);
+        
+        addWindowListener(
+            new WindowAdapter()
+            {
+		public void windowClosing(WindowEvent we)
+		{
+			System.exit(0);	 
+		}
+            }
+	);
+        
+        setSize(408,299);
+        Dimension dim=Toolkit.getDefaultToolkit().getScreenSize();
+        setLocation((dim.width-408)/2,(dim.height-299)/2);
+       
+        setVisible(true);
+    }    
+    
+    public void keyPressed(KeyEvent ke)
+                        {
+                            int code=ke.getKeyCode();
+                            if(code==KeyEvent.VK_LEFT)
+                            {
+                                if(move!=2)
+                                    move=1;
+                            }
+                            else if(code==KeyEvent.VK_RIGHT)
+                            {
+                                if(move!=1)
+                                    move=2;
+                            }
+                            else if(code==KeyEvent.VK_UP)
+                            {
+                                if(move!=4)
+                                    move=3;
+                            }
+                            else if(code==KeyEvent.VK_DOWN)
+                            {
+                                if(move!=3)
+                                    move=4;
+                            }
+                            else if(code==KeyEvent.VK_ENTER)
+                            {
+                                if(playing==0 )
+                                    startGame();
+                            }
+                            
+                        }
+        
+    public void keyTyped(KeyEvent ke){}
+    public void keyReleased(KeyEvent ke){}
+    
+    public void startGame()
+    {        
+        endGame=0;
+        score=0;
+        foodPoint=new Point(50,50);
+        pointVector.removeAllElements();
+        
+        Dimension d=drawPanel.getSize();
+        
+        Point p=new Point();
+        p.x=d.width/2;
+        p.y=d.height/2;
+        
+        numberOfHBlocks=((d.width/2)/horizontalWidth)*2;
+        numberOfHBlocks-=4;
+        numberOfVBlocks=((d.height/2)/verticalHeight)*2;
+        numberOfVBlocks-=4;
+        startingXPoint=p.x-((numberOfHBlocks/2)*horizontalWidth);
+        startingYPoint=p.y-((numberOfVBlocks/2)*verticalHeight);
+        foodPoint.x=startingXPoint+(2*horizontalWidth);
+        foodPoint.y=startingYPoint+(2*verticalHeight);
+        
+        pointVector.addElement(p);
+        
+        move=1;
+        
+        drawPanel.repaint();
+        myThread.myResume();
+        
+        playing=1;
+        startButton.setEnabled(false);
+             
+        setResizable(false);
+        
+        
+    }
+    
+    
+    
+    
+    
+    public void endCurrentGame()
+    {
+        endGame=0;
+        playing=0;
+        
+        myThread.mySuspend();
+        
+        startButton.setEnabled(true);
+        
+        
+        
+        JOptionPane.showMessageDialog(this,"End of Game.\nYour score is : "+score,"Message",JOptionPane.INFORMATION_MESSAGE);
+        
+        pointVector.removeAllElements();
+        drawPanel.repaint();
+        
+        setResizable(true);
+        
+        score=0;
+        scoreLabel.setText(" "+score);
+          
+        
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+     
+    
+    class DrawPanel extends JPanel
+    
+    {
+        public DrawPanel()
+        {
+                
+        }
+        public void paint(Graphics g)
+        {
+          super.paint(g);
+          
+          {
+              Dimension dim=getSize();
+              g.setColor(Color.BLACK);
+              g.fillRect(0,0,dim.width,dim.height);
+          }
+          
+          int size=pointVector.size();
+          if(size>0)
+          {
+            g.setColor(Color.CYAN);
+            for(int i=0;i<size-1;i++)
+            {
+                Point pp=(Point)pointVector.elementAt(i);
+                g.fill3DRect(pp.x+1,pp.y+1,horizontalWidth-2, verticalHeight-2,true);
+                
+            }
+            Point ppp=(Point)pointVector.elementAt(size-1);
+            
+            g.fillRoundRect(ppp.x+1,ppp.y+1,horizontalWidth-2, verticalHeight-2,4,4);
+            g.setColor(Color.GREEN);
+            g.fillOval(foodPoint.x,foodPoint.y,horizontalWidth, verticalHeight);
+            
+          }            
+       }
+    }
+    
+    class MyThread implements Runnable
+    {
+        Thread t;
+        boolean suspendFlag;
+        
+        public MyThread()
+        {
+            t=new Thread(this);
+            suspendFlag=true;
+            t.start();
+        }
+        
+        public void mySuspend()
+        {
+            suspendFlag=true;
+        }
+        
+        synchronized void myResume()
+        {
+            suspendFlag=false;
+            notify();
+        }
+        
+        public void run()
+        {
+            for(;;)
+            {
+                try
+                {
+                    {
+                        synchronized(this)
+                        {
+                            while(suspendFlag)
+                            {
+                                wait();
+                            }
+                        }
+                    }
+                    doSomething();
+                    if(endGame==0)
+                        drawPanel.repaint();
+                    if(endGame!=0)
+                    {
+                        
+                        endCurrentGame();
+                        
+                    }
+                    Thread.sleep(delayTime);                                        
+                }catch(InterruptedException e){}
+            }
+        }
+        
+        public void destroy()
+        {
+            t.destroy();
+        }
+    }
+    
+    public void doSomething()
+    {
+        int size=pointVector.size();
+          if(size>0)
+          {
+            Point p=new Point((Point)pointVector.elementAt(size-1));
+            Point oldPoint=new Point(p);
+            
+            
+            if(move==1)
+            {            
+                p.x=p.x-horizontalWidth; 
+                if(p.x<0)
+                {
+                    endGame=1;
+                    
+                }
+            }
+            else if(move==2)
+            {            
+                p.x=p.x+horizontalWidth;
+               
+                if((drawPanel.getWidth())<(p.x+horizontalWidth))
+                {
+                    endGame=1;
+                    
+                }
+            }
+            else if(move==3)
+            {            
+                p.y=p.y-verticalHeight;
+                if(p.y<0)
+                {
+                    endGame=1;
+                    
+                }
+            }
+            else if(move==4)
+            {            
+                p.y=p.y+verticalHeight;
+                
+                if((drawPanel.getHeight())<(p.y+verticalHeight))
+                {
+                    endGame=1;
+                    
+                }
+            }
+           
+            if(p.x==foodPoint.x && p.y==foodPoint.y)
+            {
+                eating=1;
+                
+            }
+            
+            pointVector.addElement(p);
+            size=pointVector.size();                        
+            
+            
+            
+            if(eating==1)
+            {
+                score+=10;
+                scoreLabel.setText(" "+score);
+                getFoodPoint();
+                
+                
+                eating=0;
+            }
+            else 
+            {    
+                {
+                Point pp=(Point)pointVector.elementAt(0);
+                pointVector.removeElementAt(0);
+                size--;
+                
+                }
+            
+            size=pointVector.size();
+            for(int i=0;i<size-1;i++)
+            {
+                Point pp=(Point)pointVector.elementAt(i);
+                 
+                if(p.x==pp.x && p.y==pp.y)
+                {
+                    endGame=2;
+                    
+                    break;
+                }
+               
+            }
+            
+            }
+            
+            
+            
+           
+        }
+    }
+    
+    public void getFoodPoint()
+    {
+        int dd=-1;
+                Dimension dim=getSize();
+                double d=rand.nextDouble();
+                if(previousNextDouble==d)
+                    d+=0.1;
+                if(d>1)
+                    d-=0.3;
+                previousNextDouble=d;
+                int xx=(int)( numberOfHBlocks *d);
+                int yy=(int)( numberOfVBlocks *d);
+                foodPoint.x=startingXPoint+(xx*horizontalWidth);
+                foodPoint.y=startingYPoint+(yy*verticalHeight);
+        int size=pointVector.size();
+        for(int i=0;i<size;i++)
+        {
+            Point p=(Point)(pointVector.elementAt(i));
+            if(p.x==foodPoint.x && p.y==foodPoint.y)
+            {
+                dd=0;
+                break;
+            }
+        }
+        if(dd==0)
+            getFoodPoint();
+        else
+            return;
+    }
+    
+    
+    public static void main(String args[])
+    {
+        new Snake();
+    }
+}
+
+
+
